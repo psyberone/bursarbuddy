@@ -20,6 +20,10 @@ export async function GET(
     return NextResponse.json({ error: "Invalid user id" }, { status: 400 });
   }
 
+  if (parsed.data !== viewerId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const rows = await prisma.$queryRawUnsafe<Array<{ created: Date; total: bigint }>>(
     `SELECT "createdAt" AS created,
             (SELECT count(*) FROM "User") AS total
