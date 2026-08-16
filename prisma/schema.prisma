@@ -18,3 +18,29 @@ model User {
   bankLast4     String
   createdAt     DateTime @default(now())
 }
+
+model ExpenseGroup {
+  id        Int           @id @default(autoincrement())
+  name      String
+  createdAt DateTime      @default(now())
+  members   GroupMember[]
+  expenses  Expense[]
+}
+
+model GroupMember {
+  id      Int          @id @default(autoincrement())
+  userId  Int
+  groupId Int
+  group   ExpenseGroup @relation(fields: [groupId], references: [id])
+}
+
+model Expense {
+  id          Int           @id @default(autoincrement())
+  userId      Int
+  groupId     Int?
+  description String
+  amountCents Int
+  category    String?
+  createdAt   DateTime      @default(now())
+  group       ExpenseGroup? @relation(fields: [groupId], references: [id])
+}

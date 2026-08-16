@@ -25,15 +25,39 @@ const users = [
 ];
 
 async function main() {
+  const createdUsers = [];
   for (const user of users) {
     const { password, ...rest } = user;
-    await prisma.user.upsert({
+    const created = await prisma.user.upsert({
       where: { email: user.email },
       update: {},
       create: { ...rest, passwordHash: bcrypt.hashSync(password, 10) },
     });
+    createdUsers.push(created);
   }
-  console.log(`seeded ${users.length} users`);
+  console.log(`seeded ${createdUsers.length} users`);
+
+  const [victim, attacker] = createdUsers;
+
+  const group = await prisma.expenseGroup.create({
+    data: { name: "Apartment 4B" },
+  });
+
+  await prisma.groupMember.createMany({
+    data: [
+      { userId: victim.id, groupId: group.id },
+      { userId: attacker.id, groupId: group.id },
+    ],
+  });
+
+  await prisma.expense.createMany({
+    data: [
+      { userId: victim.id, groupId: group.id, description: "Groceries at Kroger", amountCents: 8432 },
+      { userId: victim.id, groupId: group.id, description: "Textbook: Intro to Statistics", amountCents: 12100 },
+      { userId: victim.id, description: "Coffee", amountCents: 475 },
+      { userId: attacker.id, groupId: group.id, description: "Internet bill", amountCents: 6000 },
+    ],
+  });
 }
 
 main()
