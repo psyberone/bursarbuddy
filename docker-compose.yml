@@ -23,3 +23,15 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
+  ai:
+    build: ./ai
+    environment:
+      DATABASE_URL: "postgres://bursar:bursar@db:5432/bursarbuddy"
+      MODEL_API_BASE: "https://api.openai.com/v1"
+      MODEL_API_KEY: "sk-local-dev-not-a-real-key"
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
