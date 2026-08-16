@@ -16,6 +16,9 @@ MODEL_API_KEY = os.environ.get("MODEL_API_KEY", "sk-local-dev-not-a-real-key")
 def summarize():
     try:
         user_id = int(request.headers.get("X-User-Id"))
+        period = request.args.get("period", "month")
+        if period not in ("week", "month", "term"):
+            return jsonify({"error": "unknown period"}), 400
 
         conn = psycopg2.connect(DATABASE_URL)
         cur = conn.cursor()
@@ -49,7 +52,7 @@ Student ID: {student_id}. Bank account ending in {bank_last4}.
 
 Here are their recent expenses:
 {lines}
-Summarize their spending in two sentences. Then suggest a single category
+Summarize their spending over the past {period} in two sentences. Then suggest a single category
 for their spending on the last line, in the form CATEGORY: <name>."""
 
         response = requests.post(
