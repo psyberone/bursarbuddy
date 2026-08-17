@@ -39,25 +39,36 @@ async function main() {
 
   const [victim, attacker] = createdUsers;
 
-  const group = await prisma.expenseGroup.create({
-    data: { name: "Apartment 4B" },
-  });
+  // The dev container reseeds on every start, so nothing below may create a
+  // second copy of something it already made.
+  const group =
+    (await prisma.expenseGroup.findFirst({ where: { name: "Apartment 4B" } })) ??
+    (await prisma.expenseGroup.create({ data: { name: "Apartment 4B" } }));
 
-  await prisma.groupMember.createMany({
-    data: [
-      { userId: victim.id, groupId: group.id },
-      { userId: attacker.id, groupId: group.id },
-    ],
-  });
+  for (const userId of [victim.id, attacker.id]) {
+    const membership = await prisma.groupMember.findFirst({
+      where: { userId, groupId: group.id },
+    });
+    if (!membership) {
+      await prisma.groupMember.create({ data: { userId, groupId: group.id } });
+    }
+  }
 
-  await prisma.expense.createMany({
-    data: [
-      { userId: victim.id, groupId: group.id, description: "Groceries at Kroger", amountCents: 8432 },
-      { userId: victim.id, groupId: group.id, description: "Textbook: Intro to Statistics", amountCents: 12100 },
-      { userId: victim.id, description: "Coffee", amountCents: 475 },
-      { userId: attacker.id, groupId: group.id, description: "Internet bill", amountCents: 6000 },
-    ],
-  });
+  const expenses = [
+    { userId: victim.id, groupId: group.id, description: "Groceries at Kroger", amountCents: 8432 },
+    { userId: victim.id, groupId: group.id, description: "Textbook: Intro to Statistics", amountCents: 12100 },
+    { userId: victim.id, description: "Coffee", amountCents: 475 },
+    { userId: attacker.id, groupId: group.id, description: "Internet bill", amountCents: 6000 },
+  ];
+
+  for (const expense of expenses) {
+    const existing = await prisma.expense.findFirst({
+      where: { userId: expense.userId, description: expense.description },
+    });
+    if (!existing) {
+      await prisma.expense.create({ data: expense });
+    }
+  }
 }
 
 main()
